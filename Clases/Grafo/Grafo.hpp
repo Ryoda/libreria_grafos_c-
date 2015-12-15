@@ -82,6 +82,7 @@ public:
 	//Modificadores
 	void agregarVertice(const T&);
 	void agregarArco(const T&, const T&, const C& = 0);
+	void agregarArcoNoDirigido(const T&, const T&, const C& = 0);
 	void eliminarArco(const T&, const T&);
 	void eliminarVertice(const T&);
 	void nulo();
@@ -691,7 +692,7 @@ bool Grafo<T,C>::igual(const Grafo<T,C> &g2) const{
 template <class T, class C>
 bool Grafo<T,C>::obtMarca(const T &v) const{
 	NodoV<T,C> *actV = this->ubicar(v);
-	return(actV ? actV->obtMarca : false);
+	return(actV ? actV->obtMarca() : false);
 }
 
 template <class T, class C>
@@ -747,7 +748,7 @@ void Grafo<T,C>::BFS(int s, int *dist, int *pred){
 	if(verbose){
 		for(int i = 0; i < vertices; i++){
 			std::cout << "dist[" << nameArr[i] << "] = " << dist[i] << std::endl;
-			std::cout << "pred[" << nameArr[i] << "] = " << nameArr[pred[i]] << std::endl;
+			std::cout << "pred[" << nameArr[i] << "] = " << (pred[i] != -1 ? nameArr[pred[i]] : "Vertice inicial") << std::endl;
 			std::cout << "color[" << nameArr[i] << "] = " << color[i] << std::endl;
 			std::cout << "---------------------------" << std::endl;
 		}
@@ -952,6 +953,62 @@ void Grafo<T,C>::agregarArco(const T &v, const T &w, const C &p){
 		}else{
 			arcW->modSig(nuevo);
 		}
+		this->arcos++;
+	}
+}
+
+template <class T, class C>
+void Grafo<T,C>::agregarArcoNoDirigido(const T &v, const T &w, const C &p){
+	NodoV<T,C> *act, *actV, *actW;
+	NodoA<T,C> *arcV, *arcW, *nuevo, *nuevo2;
+	bool flag = false;
+	actV = actW = 0;
+	arcV = arcW = 0;
+	act = this->g;
+	while(act && (!actV || !actW)){
+		if(act->obtInfo() == v)
+			actV = act;
+		if(act->obtInfo() == w)
+			actW = act;
+		act = act->obtSig();
+	}
+	if(!actV){
+		actV = this->agregarAlFinal(v);
+	}
+	if(!actW){
+		actW = (w == v ? actV : this->agregarAlFinal(w));
+	}
+	
+	arcV = actV->obtPri();
+	while(arcV && arcV->obtVert()->obtInfo() != w){
+		arcW = arcV;
+		arcV = arcV->obtSig();
+	}
+	if(!arcV){
+		nuevo = new NodoA<T,C>(actW, p);
+		if(!arcW){
+			actV->modPri(nuevo);
+		}else{
+			arcW->modSig(nuevo);
+		}
+		flag = true;
+	}
+	
+	arcW = actW->obtPri();
+	while(arcW && arcW->obtVert()->obtInfo() != v){
+		arcV = arcW;
+		arcW = arcW->obtSig();
+	}
+	if(!arcW){
+		nuevo2 = new NodoA<T,C>(actV, p);
+		if(!arcV){
+			actW->modPri(nuevo2);
+		}else{
+			arcV->modSig(nuevo2);
+		}
+		flag = true;
+	}
+	if(flag){
 		this->arcos++;
 	}
 }
